@@ -17,14 +17,20 @@ import {
   MenuItem,
   InputLabel,
   FormControl,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
   const [newUser, setNewUser] = useState({ username: '', email: '', password: '', role: '' });
   const [editingUserId, setEditingUserId] = useState(null); // Track the user being edited
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   const roles = ['admin', 'field-officer', 'trainee']; // Define available roles
 
@@ -38,6 +44,9 @@ function UserManagement() {
       setUsers(response.data);
     } catch (error) {
       console.error('Failed to fetch users:', error);
+      setSnackbarMessage('Failed to fetch users');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -47,14 +56,21 @@ function UserManagement() {
         // Update the user if editing
         await api.put(`/users/${editingUserId}`, newUser);
         setEditingUserId(null); // Reset editing state
+        setSnackbarMessage('User updated successfully');
       } else {
         // Create a new user
         await api.post('/users', newUser);
+        setSnackbarMessage('User created successfully');
       }
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
       setNewUser({ username: '', email: '', password: '', role: '' }); // Clear the form
       fetchUsers(); // Refresh user list
     } catch (error) {
       console.error('Failed to create or update user:', error);
+      setSnackbarMessage('Failed to create or update user');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -66,20 +82,30 @@ function UserManagement() {
   const handleDeleteUser = async (id) => {
     try {
       await api.delete(`/users/${id}`);
+      setSnackbarMessage('User deleted successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
       fetchUsers(); // Refresh user list
     } catch (error) {
       console.error('Failed to delete user:', error);
+      setSnackbarMessage('Failed to delete user');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
   };
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" gutterBottom align="center" sx={{ color: '#3e4e3e', fontWeight: 'bold' }}>
         User Management
       </Typography>
 
-      <Paper sx={{ p: 3, mb: 4 }} elevation={3}>
-        <Typography variant="h6" gutterBottom>
+      <Paper sx={{ p: 3, mb: 4, backgroundColor: '#f7f7f5' }} elevation={3}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#6b8e23' }}>
           {editingUserId ? 'Update User' : 'Create New User'}
         </Typography>
         <Grid container spacing={2}>
@@ -90,6 +116,9 @@ function UserManagement() {
               fullWidth
               value={newUser.username}
               onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+              InputProps={{
+                sx: { backgroundColor: '#ffffff' },
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
@@ -99,6 +128,9 @@ function UserManagement() {
               fullWidth
               value={newUser.email}
               onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              InputProps={{
+                sx: { backgroundColor: '#ffffff' },
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
@@ -109,6 +141,9 @@ function UserManagement() {
               fullWidth
               value={newUser.password}
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              InputProps={{
+                sx: { backgroundColor: '#ffffff' },
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
@@ -119,6 +154,7 @@ function UserManagement() {
                 value={newUser.role}
                 onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                 label="Role"
+                sx={{ backgroundColor: '#ffffff' }}
               >
                 {roles.map((role) => (
                   <MenuItem key={role} value={role}>
@@ -133,7 +169,8 @@ function UserManagement() {
               variant="contained"
               color="primary"
               onClick={handleCreateOrUpdateUser}
-              sx={{ mt: 2 }}
+              startIcon={editingUserId ? <EditIcon /> : <AddCircleOutlineIcon />}
+              sx={{ mt: 2, backgroundColor: '#6b8e23', color: '#ffffff' }}
             >
               {editingUserId ? 'Update User' : 'Create User'}
             </Button>
@@ -141,8 +178,8 @@ function UserManagement() {
         </Grid>
       </Paper>
 
-      <Paper sx={{ p: 3 }} elevation={3}>
-        <Typography variant="h6" gutterBottom>
+      <Paper sx={{ p: 3, backgroundColor: '#f7f7f5' }} elevation={3}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#6b8e23' }}>
           All Users
         </Typography>
         <List>
@@ -158,6 +195,7 @@ function UserManagement() {
                     edge="end"
                     aria-label="edit"
                     onClick={() => handleEditUser(user)}
+                    sx={{ color: '#6b8e23' }}
                   >
                     <EditIcon />
                   </IconButton>
@@ -165,6 +203,7 @@ function UserManagement() {
                     edge="end"
                     aria-label="delete"
                     onClick={() => handleDeleteUser(user.id)}
+                    sx={{ color: '#d32f2f' }}
                   >
                     <DeleteIcon />
                   </IconButton>
@@ -175,6 +214,16 @@ function UserManagement() {
           ))}
         </List>
       </Paper>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

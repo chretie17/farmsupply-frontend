@@ -8,7 +8,13 @@ import {
   Typography,
   Paper,
   Container,
+  AppBar,
+  Toolbar,
+  IconButton,
 } from '@mui/material';
+import HomeIcon from '@mui/icons-material/Home';
+import LoginIcon from '@mui/icons-material/Login';
+import AgricultureIcon from '@mui/icons-material/Agriculture';
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -44,45 +50,100 @@ function Login() {
   };
 
   return (
-    <Container maxWidth="xs">
-      <Paper elevation={3} sx={{ padding: 4, mt: 8 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center">
-          Login
-        </Typography>
-        <form onSubmit={handleLogin}>
-          <Box sx={{ mb: 2 }}>
-            <TextField
-              label="Username or Email"
-              variant="outlined"
-              fullWidth
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </Box>
-          <Box sx={{ mb: 2 }}>
-            <TextField
-              label="Password"
-              type="password"
-              variant="outlined"
-              fullWidth
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </Box>
+    <>
+      <AppBar position="static" color="transparent" elevation={0}>
+        <Toolbar>
+          <IconButton edge="start" color="inherit" aria-label="logo">
+            <AgricultureIcon fontSize="large" />
+          </IconButton>
+          <Typography variant="h6" sx={{ flexGrow: 1, color: '#3e4e3e' }}>
+            Farm Supply
+          </Typography>
           <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{ mt: 2 }}
+            color="inherit"
+            startIcon={<HomeIcon />}
+            onClick={() => navigate('/')}
+            sx={{ color: '#3e4e3e' }}
+          >
+            Home
+          </Button>
+          <Button
+            color="inherit"
+            startIcon={<LoginIcon />}
+            onClick={() => navigate('/')}
+            sx={{ color: '#3e4e3e' }}
           >
             Login
           </Button>
-        </form>
-      </Paper>
-    </Container>
+        </Toolbar>
+      </AppBar>
+      <Container maxWidth="xs">
+        <Paper
+          elevation={3}
+          sx={{
+            padding: 4,
+            mt: 8,
+            borderRadius: 2,
+            backgroundColor: '#f7f7f5',
+            boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
+          }}
+        >
+          <Typography
+            variant="h4"
+            component="h1"
+            gutterBottom
+            align="center"
+            sx={{ color: '#3e4e3e', fontWeight: 'bold' }}
+          >
+            Login
+          </Typography>
+          <form onSubmit={handleLogin}>
+            <Box sx={{ mb: 2 }}>
+              <TextField
+                label="Username or Email"
+                variant="outlined"
+                fullWidth
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                InputProps={{
+                  sx: { backgroundColor: '#ffffff' },
+                }}
+              />
+            </Box>
+            <Box sx={{ mb: 2 }}>
+              <TextField
+                label="Password"
+                type="password"
+                variant="outlined"
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                InputProps={{
+                  sx: { backgroundColor: '#ffffff' },
+                }}
+              />
+            </Box>
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{
+                mt: 2,
+                backgroundColor: '#6b8e23',
+                color: '#ffffff',
+                '&:hover': {
+                  backgroundColor: '#556b2f',
+                },
+              }}
+              fullWidth
+            >
+              Login
+            </Button>
+          </form>
+        </Paper>
+      </Container>
+    </>
   );
 }
 

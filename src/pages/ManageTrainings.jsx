@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, TextField, Typography, Paper, List, ListItem, ListItemText, Divider, Grid, IconButton } from '@mui/material';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Paper,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Grid,
+  IconButton,
+  Snackbar,
+  Alert,
+} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import api from '../api';
 
 function ManageTrainings() {
@@ -13,6 +28,9 @@ function ManageTrainings() {
     PdfFile: null,
   });
   const [editingTrainingId, setEditingTrainingId] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   useEffect(() => {
     fetchTrainings();
@@ -24,6 +42,9 @@ function ManageTrainings() {
       setTrainings(response.data);
     } catch (error) {
       console.error('Failed to fetch trainings:', error);
+      setSnackbarMessage('Failed to fetch trainings');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -54,13 +75,18 @@ function ManageTrainings() {
           },
         });
         setEditingTrainingId(null);
+        setSnackbarMessage('Training updated successfully');
       } else {
         await api.post('/trainings', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
+        setSnackbarMessage('Training added successfully');
       }
+
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
 
       setNewTraining({
         TrainingTitle: '',
@@ -71,6 +97,9 @@ function ManageTrainings() {
       fetchTrainings(); // Refresh training list
     } catch (error) {
       console.error('Failed to create or update training:', error);
+      setSnackbarMessage('Failed to create or update training');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -87,9 +116,15 @@ function ManageTrainings() {
   const handleDeleteTraining = async (id) => {
     try {
       await api.delete(`/trainings/${id}`);
+      setSnackbarMessage('Training deleted successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
       fetchTrainings(); // Refresh training list
     } catch (error) {
       console.error('Failed to delete training:', error);
+      setSnackbarMessage('Failed to delete training');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -103,14 +138,18 @@ function ManageTrainings() {
     setEditingTrainingId(null);
   };
 
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" gutterBottom align="center" sx={{ color: '#3e4e3e', fontWeight: 'bold' }}>
         Training Management
       </Typography>
 
-      <Paper sx={{ p: 3, mb: 4 }} elevation={3}>
-        <Typography variant="h6" gutterBottom>
+      <Paper sx={{ p: 3, mb: 4, backgroundColor: '#f7f7f5' }} elevation={3}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#6b8e23' }}>
           {editingTrainingId ? 'Update Training' : 'Add New Training'}
         </Typography>
         <form onSubmit={handleCreateOrUpdateTraining}>
@@ -124,6 +163,9 @@ function ManageTrainings() {
                 value={newTraining.TrainingTitle}
                 onChange={handleChange}
                 required
+                InputProps={{
+                  sx: { backgroundColor: '#ffffff' },
+                }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -137,6 +179,9 @@ function ManageTrainings() {
                 value={newTraining.Description}
                 onChange={handleChange}
                 required
+                InputProps={{
+                  sx: { backgroundColor: '#ffffff' },
+                }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -150,19 +195,22 @@ function ManageTrainings() {
                 value={newTraining.ScheduledDate}
                 onChange={handleChange}
                 required
+                InputProps={{
+                  sx: { backgroundColor: '#ffffff' },
+                }}
               />
             </Grid>
             <Grid item xs={12}>
-              <Button variant="contained" component="label" sx={{ mt: 2 }}>
+              <Button variant="contained" component="label" startIcon={<UploadFileIcon />} sx={{ mt: 2, backgroundColor: '#6b8e23', color: '#ffffff' }}>
                 {newTraining.PdfFile ? newTraining.PdfFile.name : 'Upload PDF'}
                 <input type="file" hidden name="PdfFile" onChange={handleChange} />
               </Button>
             </Grid>
             <Grid item xs={12}>
-              <Button variant="contained" color="primary" type="submit" sx={{ mt: 2 }}>
+              <Button variant="contained" color="primary" type="submit" sx={{ mt: 2, backgroundColor: '#6b8e23', color: '#ffffff' }}>
                 {editingTrainingId ? 'Update Training' : 'Add Training'}
               </Button>
-              <Button variant="outlined" onClick={handleReset} sx={{ mt: 2, ml: 2 }}>
+              <Button variant="outlined" onClick={handleReset} sx={{ mt: 2, ml: 2, color: '#6b8e23', borderColor: '#6b8e23' }}>
                 Cancel
               </Button>
             </Grid>
@@ -170,8 +218,8 @@ function ManageTrainings() {
         </form>
       </Paper>
 
-      <Paper sx={{ p: 3 }} elevation={3}>
-        <Typography variant="h6" gutterBottom>
+      <Paper sx={{ p: 3, backgroundColor: '#f7f7f5' }} elevation={3}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#6b8e23' }}>
           All Trainings
         </Typography>
         <List>
@@ -186,6 +234,7 @@ function ManageTrainings() {
                   edge="end"
                   aria-label="edit"
                   onClick={() => handleEditTraining(training)}
+                  sx={{ color: '#6b8e23' }}
                 >
                   <EditIcon />
                 </IconButton>
@@ -193,6 +242,7 @@ function ManageTrainings() {
                   edge="end"
                   aria-label="delete"
                   onClick={() => handleDeleteTraining(training.TrainingId)}
+                  sx={{ color: '#d32f2f' }}
                 >
                   <DeleteIcon />
                 </IconButton>
@@ -202,6 +252,16 @@ function ManageTrainings() {
           ))}
         </List>
       </Paper>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
