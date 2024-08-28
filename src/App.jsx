@@ -1,15 +1,21 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import AdminDashboard from './pages/AdminDashboard';
-import FieldOfficerDashboard from './pages/FieldOfficerDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import FieldOfficerDashboard from './pages/field officer/FieldOfficerDashboard';
 import TraineeDashboard from './pages/TraineeDashboard';
 import Login from './pages/Login';
 import ProtectedRoute from './protectedRoute';
 import Sidebar from './pages/Sidebar';
-import UserManagement from './pages/ManageUsers'; 
+import UserManagement from './pages/admin/ManageUsers'; 
 import FarmerManagement from './pages/ManageFarmers';
 import ManageTrainings from './pages/ManageTrainings'; 
-import FieldOfficerTrainings from './pages/FieldOfficerTrainings';
+import FieldOfficerTrainings from './pages/field officer/FieldOfficerTrainings';
+import FieldOfficerProducts from './pages/field officer/FieldOfficerProducts';
+import FinanceOfficerDashboard from './pages/financeDashboard';
+import FinanceOrders from './pages/FinanceManageOrderStatus';
+import FieldOfficerOrders from './pages/field officer/FieldOfficerOrders';
+import AdminOrders from './pages/admin/AdminOrders';
+import Report from './pages/admin/report';
 import { Box } from '@mui/material';
 
 const drawerWidth = 100; // Set a fixed width for the sidebar
@@ -92,6 +98,54 @@ const AppLayout = () => {
   element={
     <ProtectedRoute roleRequired="field-officer">
       <FieldOfficerTrainings />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/field-officer/products"
+  element={
+    <ProtectedRoute roleRequired="field-officer">
+      <FieldOfficerProducts />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/finance/dashboard"
+  element={
+    <ProtectedRoute roleRequired="finance-officer">
+      <FinanceOfficerDashboard />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/finance/orders"
+  element={
+    <ProtectedRoute roleRequired="admin">
+      <FinanceOrders />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/field-officer/orders"
+  element={
+    <ProtectedRoute roleRequired="field-officer">
+      <FieldOfficerOrders />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/orders"
+  element={
+    <ProtectedRoute roleRequired="admin">
+      <AdminOrders />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/reports"
+  element={
+    <ProtectedRoute roleRequired="admin">
+      <Report />
     </ProtectedRoute>
   }
 />

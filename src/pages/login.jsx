@@ -21,33 +21,40 @@ function Login() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await api.post('/auth/login', { username, password });
-      const { token, role } = response.data;
+ // Frontend - Login component
+const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await api.post('/auth/login', { username, password });
+    const { token, role, userId } = response.data; // Capture userId from the response
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', role);
+    localStorage.setItem('token', token);
+    localStorage.setItem('role', role);
+    localStorage.setItem('user_id', userId); // Save user ID in local storage
 
-      switch (role) {
-        case 'admin':
-          navigate('/admin/dashboard');
-          break;
-        case 'field-officer':
-          navigate('/field-officer/dashboard');
-          break;
-        case 'trainee':
-          navigate('/trainee/dashboard');
-          break;
-        default:
-          console.error('Unknown role:', role);
-          break;
-      }
-    } catch (err) {
-      console.error('Login failed:', err);
+    // Navigate based on user role
+    switch (role) {
+      case 'admin':
+        navigate('/admin/dashboard');
+        break;
+      case 'field-officer':
+        navigate('/field-officer/dashboard');
+        break;
+      case 'trainee':
+        navigate('/trainee/dashboard');
+        break;
+      case 'finance-officer':
+        navigate('/finance/dashboard');
+        break;
+      default:
+        console.error('Unknown role:', role);
+        break;
     }
-  };
+  } catch (err) {
+    console.error('Login failed:', err);
+  }
+};
+
 
   return (
     <>

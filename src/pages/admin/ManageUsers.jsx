@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '../api';
+import api from '../../api';
 import {
   Box,
   Button,
@@ -32,7 +32,7 @@ function UserManagement() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-  const roles = ['admin', 'field-officer', 'trainee']; // Define available roles
+  const roles = ['admin', 'field-officer', 'trainee', 'finance-officer']; // Define available roles
 
   useEffect(() => {
     fetchUsers();
