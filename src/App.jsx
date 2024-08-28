@@ -12,7 +12,7 @@ import ManageTrainings from './pages/ManageTrainings';
 import FieldOfficerTrainings from './pages/FieldOfficerTrainings';
 import { Box } from '@mui/material';
 
-const drawerWidth = 240; // Set a fixed width for the sidebar
+const drawerWidth = 100; // Set a fixed width for the sidebar
 
 const AppLayout = () => {
   const location = useLocation();
