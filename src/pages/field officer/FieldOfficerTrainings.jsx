@@ -9,7 +9,7 @@ import {
   Divider,
   Button,
 } from '@mui/material';
-import api from '../api';
+import api from '../../api';
 
 function FieldOfficerTrainings() {
   const [trainings, setTrainings] = useState([]);
