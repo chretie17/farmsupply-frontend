@@ -1,42 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Divider,
-  Grid,
-  Snackbar,
-  Alert,
-} from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
+import { Table, Button, Input, Space, Typography, Modal, Form, notification, Popconfirm } from 'antd';
+import { EditOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import api from '../api';
 
-function FarmerManagement() {
+const FarmerManagement = () => {
   const [farmers, setFarmers] = useState([]);
-  const [newFarmer, setNewFarmer] = useState({
-    FarmerName: '',
-    TelNo: '',
-    Address: '',
-    AccountNo: '',
-    NationalId: '',
-    Site: '',
-    farmSize: '',
-    harvestPerSeason: '',
-  });
-  const [editingFarmerId, setEditingFarmerId] = useState(null);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [loading, setLoading] = useState(true);
+  const [editingFarmer, setEditingFarmer] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [filteredFarmers, setFilteredFarmers] = useState([]);
 
   const role = localStorage.getItem('role');
 
@@ -48,302 +21,274 @@ function FarmerManagement() {
     try {
       const response = await api.get('/farmers');
       setFarmers(response.data);
+      setFilteredFarmers(response.data);
+      setLoading(false);
     } catch (error) {
-      console.error('Failed to fetch farmers:', error);
-      setSnackbarMessage('Failed to fetch farmers');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-    }
-  };
-
-  const handleChange = (e) => {
-    setNewFarmer({
-      ...newFarmer,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleCreateOrUpdateFarmer = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingFarmerId) {
-        await api.put(`/farmers/${editingFarmerId}`, newFarmer);
-        setEditingFarmerId(null);
-        setSnackbarMessage('Farmer updated successfully');
-      } else {
-        await api.post('/farmers', newFarmer);
-        setSnackbarMessage('Farmer added successfully');
-      }
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
-      setNewFarmer({
-        FarmerName: '',
-        TelNo: '',
-        Address: '',
-        AccountNo: '',
-        NationalId: '',
-        Site: '',
-        farmSize: '',
-        harvestPerSeason: '',
+      notification.error({
+        message: 'Error',
+        description: 'Failed to fetch farmers',
       });
-      fetchFarmers(); // Refresh farmer list
-    } catch (error) {
-      console.error('Failed to add or update farmer:', error);
-      setSnackbarMessage('Failed to add or update farmer');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      setLoading(false);
     }
   };
 
-  const handleEditFarmer = (farmer) => {
-    setNewFarmer({
-      FarmerName: farmer.FarmerName || '',
-      TelNo: farmer.TelNo || '',
-      Address: farmer.Address || '',
-      AccountNo: farmer.AccountNo || '',
-      NationalId: farmer.NationalId || '',
-      Site: farmer.Site || '',
-      farmSize: farmer.farmSize || '',
-      harvestPerSeason: farmer.harvestPerSeason || '',
-    });
-    setEditingFarmerId(farmer.FarmerId);
+  const handleSearch = (value) => {
+    setSearchText(value);
+    const filteredData = farmers.filter((farmer) =>
+      farmer.FarmerName.toLowerCase().includes(value.toLowerCase()) ||
+      farmer.Site.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredFarmers(filteredData);
   };
 
   const handleDeleteFarmer = async (id) => {
     try {
       await api.delete(`/farmers/${id}`);
-      setSnackbarMessage('Farmer deleted successfully');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
+      notification.success({
+        message: 'Success',
+        description: 'Farmer deleted successfully',
+      });
       fetchFarmers(); // Refresh farmer list
     } catch (error) {
-      console.error('Failed to delete farmer:', error);
-      setSnackbarMessage('Failed to delete farmer');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      notification.error({
+        message: 'Error',
+        description: 'Failed to delete farmer',
+      });
     }
   };
 
   const handleApproveFarmer = async (id, status) => {
     try {
       await api.put(`/farmers/${id}/approve`, { status });
-      setSnackbarMessage(`Farmer ${status} successfully`);
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
+      notification.success({
+        message: 'Success',
+        description: `Farmer ${status} successfully`,
+      });
       fetchFarmers(); // Refresh farmer list
     } catch (error) {
-      console.error(`Failed to ${status} farmer:`, error);
-      setSnackbarMessage(`Failed to ${status} farmer`);
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      notification.error({
+        message: 'Error',
+        description: `Failed to ${status} farmer`,
+      });
     }
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
+  const handleEditFarmer = (farmer) => {
+    setEditingFarmer(farmer);
+    setIsModalVisible(true);
   };
 
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom align="center" sx={{ color: '#3e4e3e', fontWeight: 'bold' }}>
-        Farmer Management
-      </Typography>
+  const handleCreateOrUpdateFarmer = async (values) => {
+    try {
+      if (editingFarmer) {
+        await api.put(`/farmers/${editingFarmer.FarmerId}`, values);
+        notification.success({
+          message: 'Success',
+          description: 'Farmer updated successfully',
+        });
+      } else {
+        await api.post('/farmers', values);
+        notification.success({
+          message: 'Success',
+          description: 'Farmer added successfully',
+        });
+      }
+      setIsModalVisible(false);
+      setEditingFarmer(null);
+      fetchFarmers(); // Refresh farmer list
+    } catch (error) {
+      notification.error({
+        message: 'Error',
+        description: 'Failed to create or update farmer',
+      });
+    }
+  };
 
-      <Paper sx={{ p: 3, mb: 4, backgroundColor: '#f7f7f5' }} elevation={3}>
-        <Typography variant="h6" gutterBottom sx={{ color: '#6b8e23' }}>
-          {editingFarmerId ? 'Update Farmer' : 'Add New Farmer'}
-        </Typography>
-        <form onSubmit={handleCreateOrUpdateFarmer}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Farmer Name"
-                variant="outlined"
-                fullWidth
-                name="FarmerName"
-                value={newFarmer.FarmerName}
-                onChange={handleChange}
-                InputProps={{
-                  sx: { backgroundColor: '#ffffff' },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Telephone Number"
-                variant="outlined"
-                fullWidth
-                name="TelNo"
-                value={newFarmer.TelNo}
-                onChange={handleChange}
-                InputProps={{
-                  sx: { backgroundColor: '#ffffff' },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Address"
-                variant="outlined"
-                fullWidth
-                name="Address"
-                value={newFarmer.Address}
-                onChange={handleChange}
-                InputProps={{
-                  sx: { backgroundColor: '#ffffff' },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Account Number"
-                variant="outlined"
-                fullWidth
-                name="AccountNo"
-                value={newFarmer.AccountNo}
-                onChange={handleChange}
-                InputProps={{
-                  sx: { backgroundColor: '#ffffff' },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="National ID"
-                variant="outlined"
-                fullWidth
-                name="NationalId"
-                value={newFarmer.NationalId}
-                onChange={handleChange}
-                InputProps={{
-                  sx: { backgroundColor: '#ffffff' },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Site"
-                variant="outlined"
-                fullWidth
-                name="Site"
-                value={newFarmer.Site}
-                onChange={handleChange}
-                InputProps={{
-                  sx: { backgroundColor: '#ffffff' },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Farm Size (hectares)"
-                variant="outlined"
-                fullWidth
-                name="farmSize"
-                value={newFarmer.farmSize}
-                onChange={handleChange}
-                InputProps={{
-                  sx: { backgroundColor: '#ffffff' },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Harvest Per Season (tons)"
-                variant="outlined"
-                fullWidth
-                name="harvestPerSeason"
-                value={newFarmer.harvestPerSeason}
-                onChange={handleChange}
-                InputProps={{
-                  sx: { backgroundColor: '#ffffff' },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
+    setEditingFarmer(null);
+  };
+
+  const columns = [
+    {
+      title: 'Farmer Name',
+      dataIndex: 'FarmerName',
+      key: 'FarmerName',
+      sorter: (a, b) => a.FarmerName.localeCompare(b.FarmerName),
+    },
+    {
+      title: 'Telephone Number',
+      dataIndex: 'TelNo',
+      key: 'TelNo',
+    },
+    {
+      title: 'Site',
+      dataIndex: 'Site',
+      key: 'Site',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      filters: [
+        { text: 'Pending', value: 'pending' },
+        { text: 'Approved', value: 'approved' },
+        { text: 'Rejected', value: 'rejected' },
+      ],
+      onFilter: (value, record) => record.status.includes(value),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => handleEditFarmer(record)}
+          >
+            Edit
+          </Button>
+          <Popconfirm
+            title="Are you sure to delete this farmer?"
+            onConfirm={() => handleDeleteFarmer(record.FarmerId)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="danger" icon={<DeleteOutlined />}>
+              Delete
+            </Button>
+          </Popconfirm>
+          {record.status === 'pending' && role === 'admin' && (
+            <>
               <Button
-                variant="contained"
-                color="primary"
-                type="submit"
-                startIcon={editingFarmerId ? <EditIcon /> : <CheckCircleIcon />}
-                sx={{ mt: 2, backgroundColor: '#6b8e23', color: '#ffffff' }}
+                type="success"
+                icon={<CheckCircleOutlined />}
+                onClick={() => handleApproveFarmer(record.FarmerId, 'approved')}
               >
-                {editingFarmerId ? 'Update Farmer' : 'Add Farmer'}
+                Approve
               </Button>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
+              <Button
+                type="danger"
+                icon={<CloseCircleOutlined />}
+                onClick={() => handleApproveFarmer(record.FarmerId, 'rejected')}
+              >
+                Reject
+              </Button>
+            </>
+          )}
+        </Space>
+      ),
+    },
+  ];
 
-      <Paper sx={{ p: 3, backgroundColor: '#f7f7f5' }} elevation={3}>
-        <Typography variant="h6" gutterBottom sx={{ color: '#6b8e23' }}>
-          All Farmers
-        </Typography>
-        <List>
-          {farmers.map((farmer) => (
-            <React.Fragment key={farmer.FarmerId}>
-              <ListItem>
-                <ListItemText
-                  primary={`${farmer.FarmerName || 'N/A'} - ${farmer.Site || 'N/A'} - ${farmer.status || 'N/A'}`}
-                  secondary={`Contact: ${farmer.TelNo || 'N/A'}, Address: ${farmer.Address || 'N/A'}, Account: ${farmer.AccountNo || 'N/A'}`}
-                />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    aria-label="edit"
-                    onClick={() => handleEditFarmer(farmer)}
-                    sx={{ color: '#6b8e23' }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    edge="end"
-                    aria-label="delete"
-                    onClick={() => handleDeleteFarmer(farmer.FarmerId)}
-                    sx={{ color: '#d32f2f' }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                  {farmer.status === 'pending' && role === 'admin' && (
-                    <>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        onClick={() => handleApproveFarmer(farmer.FarmerId, 'approved')}
-                        sx={{ ml: 2 }}
-                        startIcon={<CheckCircleIcon />}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() => handleApproveFarmer(farmer.FarmerId, 'rejected')}
-                        sx={{ ml: 2 }}
-                        startIcon={<CancelIcon />}
-                      >
-                        Reject
-                      </Button>
-                    </>
-                  )}
-                </ListItemSecondaryAction>
-              </ListItem>
-              <Divider />
-            </React.Fragment>
-          ))}
-        </List>
-      </Paper>
+  return (
+    <div>
+      <Typography.Title level={2} style={{ textAlign: 'center', marginBottom: 20 }}>
+        Farmer Management
+      </Typography.Title>
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
+      <Space style={{ marginBottom: 16 }}>
+        <Input
+          placeholder="Search Farmers"
+          value={searchText}
+          onChange={(e) => handleSearch(e.target.value)}
+          style={{ width: 300 }}
+        />
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setIsModalVisible(true)}
+        >
+          Add Farmer
+        </Button>
+      </Space>
+
+      <Table
+        columns={columns}
+        dataSource={filteredFarmers}
+        loading={loading}
+        rowKey="FarmerId"
+        pagination={{ pageSize: 10 }}
+        bordered
+      />
+
+      <Modal
+        title={editingFarmer ? 'Edit Farmer' : 'Add Farmer'}
+        visible={isModalVisible}
+        onCancel={handleModalCancel}
+        footer={null}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-    </Box>
+        <Form
+          layout="vertical"
+          initialValues={editingFarmer || {}}
+          onFinish={handleCreateOrUpdateFarmer}
+        >
+          <Form.Item
+            label="Farmer Name"
+            name="FarmerName"
+            rules={[{ required: true, message: 'Please input the farmer name!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Telephone Number"
+            name="TelNo"
+            rules={[{ required: true, message: 'Please input the telephone number!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Address"
+            name="Address"
+            rules={[{ required: true, message: 'Please input the address!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Account Number"
+            name="AccountNo"
+            rules={[{ required: true, message: 'Please input the account number!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="National ID"
+            name="NationalId"
+            rules={[{ required: true, message: 'Please input the national ID!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Site"
+            name="Site"
+            rules={[{ required: true, message: 'Please input the site!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Farm Size (hectares)"
+            name="farmSize"
+            rules={[{ required: true, message: 'Please input the farm size!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Harvest Per Season (tons)"
+            name="harvestPerSeason"
+            rules={[{ required: true, message: 'Please input the harvest per season!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              {editingFarmer ? 'Update Farmer' : 'Add Farmer'}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
   );
-}
+};
 
 export default FarmerManagement;

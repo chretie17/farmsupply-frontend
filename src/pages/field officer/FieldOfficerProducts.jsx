@@ -1,35 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
+  Table,
   Button,
-  TextField,
   Typography,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
-  Grid,
+  Space,
+  Input,
+  Modal,
+  Form,
   Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  IconButton,
-} from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
+  notification,
+} from 'antd';
+import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import api from '../../api';
 
-function ManageProducts() {
+const { Option } = Select;
+
+const ManageProducts = () => {
   const [products, setProducts] = useState([]);
   const [farmers, setFarmers] = useState([]);
-  const [newProduct, setNewProduct] = useState({
-    ProductName: '',
-    Quantity: '',
-    UnitPriceRwf: '',
-    FarmerId: '',
-  });
-  const [editingProductId, setEditingProductId] = useState(null);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+
+  const [form] = Form.useForm();
 
   useEffect(() => {
     fetchProducts();
@@ -40,8 +34,11 @@ function ManageProducts() {
     try {
       const response = await api.get('/products');
       setProducts(response.data);
+      setFilteredProducts(response.data);
+      setLoading(false);
     } catch (error) {
       console.error('Failed to fetch products:', error);
+      setLoading(false);
     }
   };
 
@@ -54,163 +51,205 @@ function ManageProducts() {
     }
   };
 
-  const handleChange = (e) => {
-    setNewProduct({
-      ...newProduct,
-      [e.target.name]: e.target.value,
-    });
+  const handleSearch = (value) => {
+    const filteredData = products.filter(
+      (product) =>
+        product.ProductName.toLowerCase().includes(value.toLowerCase()) ||
+        product.FarmerName.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredProducts(filteredData);
   };
 
-  const handleCreateOrUpdateProduct = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingProductId) {
-        await api.put(`/products/${editingProductId}`, newProduct);
-        setEditingProductId(null);
-      } else {
-        await api.post('/products', newProduct);
-      }
-      setNewProduct({
-        ProductName: '',
-        Quantity: '',
-        UnitPriceRwf: '',
-        FarmerId: '',
-      });
-      fetchProducts(); // Refresh product list
-    } catch (error) {
-      console.error('Failed to add or update product:', error);
+  const handleAddOrEditProduct = (record) => {
+    setIsModalVisible(true);
+    setEditingProduct(record);
+    if (record) {
+      form.setFieldsValue(record);
+    } else {
+      form.resetFields();
     }
-  };
-
-  const handleEditProduct = (product) => {
-    setNewProduct({
-      ProductName: product.ProductName,
-      Quantity: product.Quantity,
-      UnitPriceRwf: product.UnitPriceRwf,
-      FarmerId: product.FarmerId,
-    });
-    setEditingProductId(product.ProductId);
   };
 
   const handleDeleteProduct = async (id) => {
     try {
       await api.delete(`/products/${id}`);
+      notification.success({ message: 'Product deleted successfully.' });
       fetchProducts(); // Refresh product list
     } catch (error) {
       console.error('Failed to delete product:', error);
+      notification.error({ message: 'Failed to delete product.' });
     }
   };
 
+  const handleModalOk = async () => {
+    try {
+      const values = form.getFieldsValue();
+      if (editingProduct) {
+        await api.put(`/products/${editingProduct.ProductId}`, values);
+        notification.success({ message: 'Product updated successfully.' });
+      } else {
+        await api.post('/products', values);
+        notification.success({ message: 'Product added successfully.' });
+      }
+      fetchProducts(); // Refresh product list
+      setIsModalVisible(false);
+    } catch (error) {
+      console.error('Failed to add or update product:', error);
+      notification.error({ message: 'Failed to add or update product.' });
+    }
+  };
+
+  const columns = [
+    {
+      title: 'Product Name',
+      dataIndex: 'ProductName',
+      key: 'ProductName',
+      sorter: (a, b) => a.ProductName.localeCompare(b.ProductName),
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+        <div style={{ padding: 8 }}>
+          <Input
+            placeholder="Search Product"
+            value={selectedKeys[0]}
+            onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+            onPressEnter={() => handleSearch(selectedKeys[0])}
+            style={{ marginBottom: 8, display: 'block' }}
+          />
+          <Space>
+            <Button
+              type="primary"
+              onClick={() => handleSearch(selectedKeys[0])}
+              icon={<PlusOutlined />}
+              size="small"
+              style={{ width: 90 }}
+            >
+              Search
+            </Button>
+            <Button onClick={() => handleSearch('')} size="small" style={{ width: 90 }}>
+              Reset
+            </Button>
+          </Space>
+        </div>
+      ),
+      filterIcon: (filtered) => <PlusOutlined style={{ color: filtered ? '#1890ff' : undefined }} />,
+      onFilter: (value, record) => record.ProductName.toLowerCase().includes(value.toLowerCase()),
+    },
+    {
+      title: 'Quantity (kg)',
+      dataIndex: 'Quantity',
+      key: 'Quantity',
+      sorter: (a, b) => a.Quantity - b.Quantity,
+    },
+    {
+      title: 'Unit Price (RWF)',
+      dataIndex: 'UnitPriceRwf',
+      key: 'UnitPriceRwf',
+      sorter: (a, b) => a.UnitPriceRwf - b.UnitPriceRwf,
+    },
+    {
+      title: 'Farmer Name',
+      dataIndex: 'FarmerName',
+      key: 'FarmerName',
+      sorter: (a, b) => a.FarmerName.localeCompare(b.FarmerName),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => handleAddOrEditProduct(record)}
+          >
+            Edit
+          </Button>
+          <Button
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteProduct(record.ProductId)}
+            danger
+          >
+            Delete
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <div className="manage-products">
+      <Typography.Title level={2} style={{ textAlign: 'center', marginBottom: 20 }}>
         Product Management
-      </Typography>
+      </Typography.Title>
 
-      <Paper sx={{ p: 3, mb: 4 }} elevation={3}>
-        <Typography variant="h6" gutterBottom>
-          {editingProductId ? 'Update Product' : 'Add New Product'}
-        </Typography>
-        <form onSubmit={handleCreateOrUpdateProduct}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Product Name"
-                variant="outlined"
-                fullWidth
-                name="ProductName"
-                value={newProduct.ProductName}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Quantity (kg)"
-                variant="outlined"
-                fullWidth
-                name="Quantity"
-                type="number"
-                value={newProduct.Quantity}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Unit Price (RWF)"
-                variant="outlined"
-                fullWidth
-                name="UnitPriceRwf"
-                type="number"
-                value={newProduct.UnitPriceRwf}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl variant="outlined" fullWidth>
-                <InputLabel id="farmer-label">Farmer</InputLabel>
-                <Select
-                  labelId="farmer-label"
-                  name="FarmerId"
-                  value={newProduct.FarmerId}
-                  onChange={handleChange}
-                  label="Farmer"
-                >
-                  {farmers.map((farmer) => (
-                    <MenuItem key={farmer.FarmerId} value={farmer.FarmerId}>
-                      {farmer.FarmerName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <Button
-                variant="contained"
-                color="primary"
-                type="submit"
-                sx={{ mt: 2 }}
-              >
-                {editingProductId ? 'Update Product' : 'Add Product'}
-              </Button>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
+      <Button
+        type="primary"
+        icon={<PlusOutlined />}
+        onClick={() => handleAddOrEditProduct(null)}
+        style={{ marginBottom: 20 }}
+      >
+        Add New Product
+      </Button>
 
-      <Paper sx={{ p: 3 }} elevation={3}>
-        <Typography variant="h6" gutterBottom>
-          All Products
-        </Typography>
-        <List>
-          {products.map((product) => (
-            <React.Fragment key={product.ProductId}>
-              <ListItem>
-                <ListItemText
-                  primary={`Product Name: ${product.ProductName} - Product Quantity: ${product.Quantity}kg - Unit Price: ${product.UnitPriceRwf} RWF - Total Price: ${product.TotalPriceRwf} RWF`}
-                  secondary={`Farmer: ${product.FarmerName}`}
-                />
-                <IconButton
-                  edge="end"
-                  aria-label="edit"
-                  onClick={() => handleEditProduct(product)}
-                >
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  edge="end"
-                  aria-label="delete"
-                  onClick={() => handleDeleteProduct(product.ProductId)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </ListItem>
-              <Divider />
-            </React.Fragment>
-          ))}
-        </List>
-      </Paper>
-    </Box>
+      <Input.Search
+        placeholder="Search Products"
+        onSearch={handleSearch}
+        style={{ marginBottom: 20, width: '50%' }}
+      />
+
+      <Table
+        columns={columns}
+        dataSource={filteredProducts}
+        loading={loading}
+        rowKey="ProductId"
+        pagination={{ pageSize: 10 }}
+        bordered
+      />
+
+      <Modal
+        title={editingProduct ? 'Update Product' : 'Add New Product'}
+        visible={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        onOk={handleModalOk}
+        okText={editingProduct ? 'Update' : 'Add'}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="ProductName"
+            label="Product Name"
+            rules={[{ required: true, message: 'Please enter the product name.' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="Quantity"
+            label="Quantity (kg)"
+            rules={[{ required: true, message: 'Please enter the quantity.' }]}
+          >
+            <Input type="number" />
+          </Form.Item>
+          <Form.Item
+            name="UnitPriceRwf"
+            label="Unit Price (RWF)"
+            rules={[{ required: true, message: 'Please enter the unit price.' }]}
+          >
+            <Input type="number" />
+          </Form.Item>
+          <Form.Item
+            name="FarmerId"
+            label="Farmer"
+            rules={[{ required: true, message: 'Please select a farmer.' }]}
+          >
+            <Select placeholder="Select Farmer">
+              {farmers.map((farmer) => (
+                <Option key={farmer.FarmerId} value={farmer.FarmerId}>
+                  {farmer.FarmerName}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
   );
-}
+};
 
 export default ManageProducts;

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -6,9 +7,9 @@ import TraineeDashboard from './pages/TraineeDashboard';
 import Login from './pages/Login';
 import ProtectedRoute from './protectedRoute';
 import Sidebar from './pages/Sidebar';
-import UserManagement from './pages/admin/ManageUsers'; 
+import UserManagement from './pages/admin/ManageUsers';
 import FarmerManagement from './pages/ManageFarmers';
-import ManageTrainings from './pages/ManageTrainings'; 
+import ManageTrainings from './pages/ManageTrainings';
 import FieldOfficerTrainings from './pages/field officer/FieldOfficerTrainings';
 import FieldOfficerProducts from './pages/field officer/FieldOfficerProducts';
 import FinanceOfficerDashboard from './pages/financeDashboard';
@@ -18,7 +19,7 @@ import AdminOrders from './pages/admin/AdminOrders';
 import Report from './pages/admin/report';
 import { Box } from '@mui/material';
 
-const drawerWidth = 100; // Set a fixed width for the sidebar
+const drawerWidth = 240; // Set a fixed width for the sidebar
 
 const AppLayout = () => {
   const location = useLocation();
@@ -27,14 +28,15 @@ const AppLayout = () => {
   const isLoginPage = location.pathname === '/';
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      {!isLoginPage && <Sidebar />}
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      {!isLoginPage && <Sidebar />} {/* Render Sidebar only if not on login page */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           padding: 3,
           marginLeft: !isLoginPage ? `${drawerWidth}px` : '0', // Add left margin if not on the login page
+          transition: 'margin-left 0.3s ease', // Smooth transition for margin change
         }}
       >
         <Routes>
@@ -75,7 +77,7 @@ const AppLayout = () => {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/admin/trainings"
             element={
@@ -94,61 +96,61 @@ const AppLayout = () => {
             }
           />
           <Route
-  path="/field-officer/trainings"
-  element={
-    <ProtectedRoute roleRequired="field-officer">
-      <FieldOfficerTrainings />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/field-officer/products"
-  element={
-    <ProtectedRoute roleRequired="field-officer">
-      <FieldOfficerProducts />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/finance/dashboard"
-  element={
-    <ProtectedRoute roleRequired="finance-officer">
-      <FinanceOfficerDashboard />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/finance/orders"
-  element={
-    <ProtectedRoute roleRequired="admin">
-      <FinanceOrders />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/field-officer/orders"
-  element={
-    <ProtectedRoute roleRequired="field-officer">
-      <FieldOfficerOrders />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/admin/orders"
-  element={
-    <ProtectedRoute roleRequired="admin">
-      <AdminOrders />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/admin/reports"
-  element={
-    <ProtectedRoute roleRequired="admin">
-      <Report />
-    </ProtectedRoute>
-  }
-/>
+            path="/field-officer/trainings"
+            element={
+              <ProtectedRoute roleRequired="field-officer">
+                <FieldOfficerTrainings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/field-officer/products"
+            element={
+              <ProtectedRoute roleRequired="field-officer">
+                <FieldOfficerProducts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/finance/dashboard"
+            element={
+              <ProtectedRoute roleRequired="finance-officer">
+                <FinanceOfficerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/finance/orders"
+            element={
+              <ProtectedRoute roleRequired="admin">
+                <FinanceOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/field-officer/orders"
+            element={
+              <ProtectedRoute roleRequired="field-officer">
+                <FieldOfficerOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <ProtectedRoute roleRequired="admin">
+                <AdminOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reports"
+            element={
+              <ProtectedRoute roleRequired="admin">
+                <Report />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Box>
     </Box>

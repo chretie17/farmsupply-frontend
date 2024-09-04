@@ -62,7 +62,7 @@ const UserTitle = styled(Title)`
   text-align: center;
 `;
 
-const App = () => {
+const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -146,26 +146,8 @@ const App = () => {
           </LogoutButton>
         </div>
       </SidebarContainer>
-      <Layout>
-        <Header style={{ padding: 0, backgroundColor: '#f0ebe1', borderRadius: '20px' }}>
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{
-              fontSize: '16px',
-              width: 64,
-              height: 64,
-              color: '#3e4e3e',
-            }}
-          />
-        </Header>
-        <Content style={{ margin: '24px 16px', padding: 24, minHeight: 280 }}>
-          {/* Your main content goes here */}
-        </Content>
-      </Layout>
     </Layout>
   );
 };
 
-export default App;
+export default Sidebar;
